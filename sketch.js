@@ -1,77 +1,137 @@
-const Engine = Matter.Engine;
-const World = Matter.World;
-const Bodies = Matter.Bodies;
-const Constraint = Matter.Constraint;
-var engine, world, backgroundImg;
-var canvas, angle, tower, ground, cannon;
-var balls = [];
+var score =0;
+var gun,bluebubble,redbubble, bullet, backBoard;
+
+var gunImg,bubbleImg, bulletImg, blastImg, backBoardImg;
+
+var redBubbleGroup, redBubbleGroup, bulletGroup;
 
 
-function preload() {
-  backgroundImg = loadImage("./assets/background.gif");
-  towerImage = loadImage("./assets/tower.png");
-  
+var life =3;
+var score=0;
+var gameState=1
+
+function preload(){
+  gunImg = loadImage("gun1.png")
+ blastImg = loadImage("blast.png")
+  bulletImg = loadImage("bullet1.png")
+  blueBubbleImg = loadImage("waterBubble.png")
+  redBubbleImg = loadImage("redbubble.png")
+  backBoardImg= loadImage("back.jpg")
 }
-
 function setup() {
-  canvas = createCanvas(1200,600);
-  engine = Engine.create();
-  world = engine.world;
-  angle = -PI / 4;
-  ground = new Ground(0, height - 1, width * 2, 1);
-  tower = new Tower(150, 350, 160, 310);
-  cannon = new Cannon(180, 110, 100, 50, angle);
-//create a boat object
-  boat = new Boat(width, height-100, 200, 200, -100)
+  createCanvas(800, 600);
 
+  backBoard= createSprite(50, width/2, 100,height);
+  backBoard.addImage(backBoardImg)
   
+  gun= createSprite(100, height/2, 50,50);
+  gun.addImage(gunImg)
+  gun.scale=0.2
+  
+  bulletGroup = createGroup();   
+  blueBubbleGroup = createGroup();   
+  redBubbleGroup = createGroup();   
+  
+  heading= createElement("h1");
+  scoreboard= createElement("h1");
 }
 
 function draw() {
-  background(189);
-  image(backgroundImg, 0, 0, width, height);
+  background("#BDA297");
+  
+  heading.html("Life: "+life)
+  heading.style('color:red'); 
+  heading.position(150,20)
 
- 
+  scoreboard.html("Score: "+score)
+  scoreboard.style('color:red'); 
+  scoreboard.position(width-200,20)
 
-  Engine.update(engine);
-  ground.display();
-  Matter.Body.setVelocity(boat.body,{x:-0.9, y:0})
+  if(gameState===1){
+    gun.y=mouseY  
 
- 
+    if (frameCount % 80 === 0) {
+      drawblueBubble();
+    }
 
-  for (var i = 0; i < balls.length; i++) {
-    showCannonBalls(balls[i], i);
+    if (frameCount % 100 === 0) {
+      drawredBubble();
+    }
+
+    if(keyDown("space")){
+      shootBullet();
+    }
+
+    if (blueBubbleGroup.collide(backBoard)){
+      handleGameover(blueBubbleGroup);
+    }
+    if (redBubbleGroup.collide(backBoard)) {
+      handleGameover(redBubbleGroup);
+    }
+    
+    if(blueBubbleGroup.collide(bulletGroup)){
+      handleBubbleCollision(blueBubbleGroup);
+    }
+
+    if(redBubbleGroup.collide(bulletGroup)){
+      handleBubbleCollision(redBubbleGroup);
+    }
+
+    drawSprites();
   }
-//display the boat
-  cannon.display();
-  tower.display();
-  boat.display();
-
+    
   
 }
 
-function keyPressed() {
-  if (keyCode === DOWN_ARROW) {
-    var cannonBall = new CannonBall(cannon.x, cannon.y);
-    balls.push(cannonBall);
-  }
+function drawblueBubble(){
+  bluebubble = createSprite(800,random(20,780),40,40);
+  bluebubble.addImage(blueBubbleImg);
+  bluebubble.scale = 0.1;
+  bluebubble.velocityX = -8;
+  bluebubble.lifetime = 400;
+  blueBubbleGroup.add(bluebubble);
+}
+function drawredBubble(){
+  redbubble = createSprite(800,random(20,780),40,40);
+  redbubble.addImage(redBubbleImg);
+  redbubble.scale = 0.1;
+  redbubble.velocityX = -8;
+  redbubble.lifetime = 400;
+  redBubbleGroup.add(redbubble);
 }
 
-//function to show the ball
-function showCannonBalls(ball, index) {
-  ball.display();
-  if (ball.body.position.x >= width || ball.body.position.y >= height - 50) {
-    Matter.World.remove(world, ball.body);
-    balls.splice(index, 1);
-  }
+function shootBullet(){
+  bullet= createSprite(150, width/2, 50,20)
+  bullet.y= gun.y-20
+  bullet.addImage(bulletImg)
+  bullet.scale=0.12
+  bullet.velocityX= 7
+  bulletGroup.add(bullet)
 }
 
+function handleBubbleCollision(bubbleGroup){
+    if (life > 0) {
+       score=score+1;
+    }
 
-
-function keyReleased() {
-  if (keyCode === DOWN_ARROW) { 
-    balls[balls.length - 1].shoot();
-  }
+   blast= createSprite(bullet.x+60, bullet.y, 50,50);
+  blast.addImage(blastImg)
+   blast.scale=0.3
+ blast.life=20
+    bulletGroup.destroyEach()
+    bubbleGroup.destroyEach()
 }
 
+function handleGameover(bubbleGroup){
+  
+    life=life-1;
+    bubbleGroup.destroyEach();
+    
 
+    if (life === 0) {
+      gameState=2
+      
+     
+    }
+  
+}
